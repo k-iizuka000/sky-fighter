@@ -1,0 +1,266 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to bottom, #87CEEB, #98FB98);
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+#gameContainer {
+    position: relative;
+    width: 1200px;
+    height: 800px;
+    background: linear-gradient(to bottom, #87CEEB, #98FB98);
+    border: 2px solid #333;
+    overflow: hidden;
+}
+
+#gameCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: transparent;
+}
+
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+#titleScreen h1 {
+    font-size: 4em;
+    margin-bottom: 10px;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+    background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    from { text-shadow: 3px 3px 6px rgba(255,215,0,0.5); }
+    to { text-shadow: 3px 3px 20px rgba(255,215,0,0.8), 0 0 30px rgba(255,165,0,0.6); }
+}
+
+.menu-button {
+    font-size: 1.3em;
+    padding: 15px 40px;
+    margin: 10px;
+    background: linear-gradient(45deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.menu-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    background: linear-gradient(45deg, #45a049, #4CAF50);
+}
+
+.menu-button.ranking {
+    background: linear-gradient(45deg, #FF6B6B, #FF5252);
+}
+
+.menu-button.ranking:hover {
+    background: linear-gradient(45deg, #FF5252, #FF6B6B);
+}
+
+.menu-button.back {
+    background: linear-gradient(45deg, #757575, #616161);
+    font-size: 1.1em;
+    padding: 12px 30px;
+}
+
+.menu-button.back:hover {
+    background: linear-gradient(45deg, #616161, #757575);
+}
+
+#gameOverScreen {
+    background: rgba(139, 0, 0, 0.95);
+}
+
+#gameOverScreen h1 {
+    color: #FF6B6B;
+    font-size: 3em;
+    margin-bottom: 20px;
+}
+
+#finalScore {
+    font-size: 2em;
+    color: #FFD700;
+    margin: 20px 0;
+}
+
+#nameInput {
+    font-size: 1.2em;
+    padding: 10px 15px;
+    margin: 10px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    text-align: center;
+    background: rgba(255,255,255,0.9);
+}
+
+#ui {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-size: 18px;
+    z-index: 5;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+#stageInfo {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: 24px;
+    z-index: 5;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-align: center;
+}
+
+#bossHpBar {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    z-index: 5;
+}
+
+#bossHpFill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF0000, #FF6B6B);
+    border-radius: 8px;
+    transition: width 0.3s ease;
+}
+
+#bossName {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #FFD700;
+    font-size: 20px;
+    font-weight: bold;
+    z-index: 5;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.stage-clear {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #FFD700;
+    font-size: 3em;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 15;
+    animation: stageClearAnim 0.5s ease-out;
+}
+
+@keyframes stageClearAnim {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+#activeBuffs {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: white;
+    font-size: 16px;
+    z-index: 5;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.buff-item {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin: 2px 0;
+}
+
+#rankingTable {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 30px;
+    margin: 20px;
+    min-width: 500px;
+}
+
+#rankingTable h2 {
+    color: #FFD700;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.ranking-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    font-size: 1.2em;
+}
+
+.ranking-item.top3 {
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.3), rgba(255, 165, 0, 0.2));
+}
+
+.rank-number {
+    font-weight: bold;
+    min-width: 40px;
+}
+
+.rank-name {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.rank-score {
+    font-weight: bold;
+    color: #4ECDC4;
+}
+
+.instructions {
+    font-size: 1.1em;
+    margin: 20px 0;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.hidden {
+    display: none !important;
+} 

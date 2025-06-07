@@ -1,0 +1,28 @@
+{
+  "name": "shooting-game",
+  "version": "1.0.0",
+  "description": "横スクロール飛行機シューティングゲーム",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "tsc --watch & python3 -m http.server 8000",
+    "serve": "python3 -m http.server 8000",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "main": "dist/main.js",
+  "directories": {
+    "lib": "src"
+  },
+  "keywords": [
+    "game",
+    "shooting",
+    "typescript",
+    "canvas"
+  ],
+  "author": "Game Developer",
+  "license": "MIT"
+} 

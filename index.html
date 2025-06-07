@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>横スクロール飛行機シューティングゲーム</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+        
+        <!-- タイトル画面 -->
+        <div id="titleScreen" class="screen">
+            <h1>🛩️ 空中戦闘 🛩️</h1>
+            <div class="instructions">
+                <p>WASDキーで移動、SPACEで攻撃</p>
+                <p>アイテムを取って武器をパワーアップ！</p>
+                <p>🛡️盾 ⚡ビーム 🚀スピード 🔥高速射撃 💖ライフ 💣ボム</p>
+            </div>
+            <button id="startButton" class="menu-button">🎮 ゲーム開始</button>
+            <button id="rankingButton" class="menu-button ranking">🏆 ランキング</button>
+        </div>
+        
+        <!-- ランキング画面 -->
+        <div id="rankingScreen" class="screen hidden">
+            <div id="rankingTable">
+                <h2>🏆 ハイスコアランキング 🏆</h2>
+                <div id="rankingList">
+                    <!-- ランキングが動的に追加される -->
+                </div>
+            </div>
+            <button id="clearRankingButton" class="menu-button" style="background: linear-gradient(45deg, #FF5722, #E64A19); margin-top: 20px;">🗑️ ランキングクリア</button>
+            <button id="backToTitleButton" class="menu-button back">← タイトルに戻る</button>
+        </div>
+        
+        <!-- ゲームオーバー画面 -->
+        <div id="gameOverScreen" class="screen hidden">
+            <h1>💥 GAME OVER 💥</h1>
+            <div id="finalScore">スコア: 0</div>
+            <div id="rankingMessage"></div>
+            <input type="text" id="nameInput" placeholder="お名前を入力してください" maxlength="10">
+            <button id="saveScoreButton" class="menu-button">💾 スコア保存</button>
+            <button id="retryButton" class="menu-button">🔄 もう一度</button>
+            <button id="backToTitleFromGameOver" class="menu-button back">← タイトルに戻る</button>
+        </div>
+        
+        <div id="ui">
+            <div>スコア: <span id="score">0</span></div>
+            <div>ライフ: <span id="lives">3</span></div>
+            <div>武器: <span id="weapon">通常弾</span></div>
+        </div>
+        
+        <div id="stageInfo">
+            <div>ステージ <span id="currentStage">1</span></div>
+            <div id="stageProgress">敵を倒してボスを出現させよう！</div>
+        </div>
+        
+        <div id="bossName" class="hidden">ボス名</div>
+        <div id="bossHpBar" class="hidden">
+            <div id="bossHpFill" style="width: 100%;"></div>
+        </div>
+        
+        <div id="activeBuffs">
+            <!-- アクティブなバフが表示される -->
+        </div>
+    </div>
+
+    <script type="module" src="dist/main.js"></script>
+</body>
+</html> 
