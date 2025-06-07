@@ -53,7 +53,7 @@ export interface BossConfig {
 
 export type WeaponType = 'normal' | 'double' | 'triple';
 export type PowerUpType = 'double' | 'triple' | 'shield' | 'beam' | 'speed' | 'rapid' | 'life' | 'bomb' | 'megabomb';
-export type GameState = 'title' | 'playing' | 'ranking' | 'gameOver';
+export type GameState = 'title' | 'playing' | 'ranking' | 'gameOver' | 'stageClear';
 
 export interface GameConfig {
     canvas: {

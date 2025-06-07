@@ -16,6 +16,7 @@ export class Game {
     private titleScreen: HTMLElement;
     private rankingScreen: HTMLElement;
     private gameOverScreen: HTMLElement;
+    private stageClearScreen: HTMLElement;
     
     // ボタン要素
     private startButton: HTMLElement;
@@ -25,6 +26,7 @@ export class Game {
     private saveScoreButton: HTMLElement;
     private retryButton: HTMLElement;
     private backToTitleFromGameOver: HTMLElement;
+    private nextStageButton: HTMLElement;
     
     // ゲーム状態
     private gameState: GameState = 'title';
@@ -47,7 +49,6 @@ export class Game {
     private readonly enemiesNeededForBoss: number = GAME_CONFIG.stages.enemiesNeededForBoss;
     private bossActive: boolean = false;
     private boss: Boss | null = null;
-    private stageClearTimer: number = 0;
     
     // ゲームオブジェクト
     private player: Player;
@@ -84,6 +85,7 @@ export class Game {
         this.titleScreen = this.getElement('titleScreen');
         this.rankingScreen = this.getElement('rankingScreen');
         this.gameOverScreen = this.getElement('gameOverScreen');
+        this.stageClearScreen = this.getElement('stageClearScreen');
         
         this.startButton = this.getElement('startButton');
         this.rankingButton = this.getElement('rankingButton');
@@ -92,6 +94,7 @@ export class Game {
         this.saveScoreButton = this.getElement('saveScoreButton');
         this.retryButton = this.getElement('retryButton');
         this.backToTitleFromGameOver = this.getElement('backToTitleFromGameOver');
+        this.nextStageButton = this.getElement('nextStageButton');
         
         this.player = new Player(50, 380);
         
@@ -146,6 +149,11 @@ export class Game {
             this.showTitle();
         });
         
+        this.nextStageButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.proceedToNextStage();
+        });
+        
         document.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
             if (e.code === 'Space') {
@@ -167,6 +175,7 @@ export class Game {
         this.titleScreen.classList.remove('hidden');
         this.rankingScreen.classList.add('hidden');
         this.gameOverScreen.classList.add('hidden');
+        this.stageClearScreen.classList.add('hidden');
     }
 
     private showRanking(): void {
@@ -174,6 +183,7 @@ export class Game {
         this.titleScreen.classList.add('hidden');
         this.rankingScreen.classList.remove('hidden');
         this.gameOverScreen.classList.add('hidden');
+        this.stageClearScreen.classList.add('hidden');
         this.updateRankingDisplay();
     }
 
@@ -182,6 +192,7 @@ export class Game {
         this.titleScreen.classList.add('hidden');
         this.rankingScreen.classList.add('hidden');
         this.gameOverScreen.classList.remove('hidden');
+        this.stageClearScreen.classList.add('hidden');
         
         const finalScoreElement = document.getElementById('finalScore');
         if (finalScoreElement) {
@@ -255,6 +266,7 @@ export class Game {
         this.titleScreen.classList.add('hidden');
         this.rankingScreen.classList.add('hidden');
         this.gameOverScreen.classList.add('hidden');
+        this.stageClearScreen.classList.add('hidden');
         this.score = 0;
         this.lives = 3;
         this.megaBombs = 0;
@@ -267,7 +279,6 @@ export class Game {
         this.enemiesKilled = 0;
         this.bossActive = false;
         this.boss = null;
-        this.stageClearTimer = 0;
         
         this.player = new Player(50, 380);
         this.enemies = [];
@@ -745,26 +756,94 @@ export class Game {
         this.bossActive = false;
         this.boss = null;
         this.hideBossUI();
-        this.stageClearTimer = 180; // 3秒間表示
         
         if (this.currentStage >= this.totalStages) {
             this.showGameClear();
         } else {
-            // 次のステージのボス予告を表示
-            const nextStage = this.currentStage + 1;
-            const nextBossConfig = GAME_CONFIG.stages.bosses.find(boss => boss.stage === nextStage);
-            
-            if (nextBossConfig) {
-                console.log(`✨ ステージ${this.currentStage}クリア！`);
-                console.log(`🔮 次はステージ${nextStage}: ${nextBossConfig.name} が待ち受けています`);
-                console.log(`📖 ${nextBossConfig.description}`);
-                console.log(`⚔️ 予想HP: ${nextBossConfig.hp} | 攻撃パターン: ${this.translateAttackPattern(nextBossConfig.attackPattern)}`);
-            }
-            
-            this.currentStage++;
-            this.enemiesKilled = 0;
-            this.updateStageUI();
+            this.showStageClear();
         }
+    }
+
+    private showStageClear(): void {
+        this.gameState = 'stageClear';
+        this.stageClearScreen.classList.remove('hidden');
+        
+        // ステージクリアボーナスの計算
+        const stageBonus = this.currentStage * 500;
+        this.score += stageBonus;
+        
+        // UI要素の更新
+        const clearedStageElement = document.getElementById('clearedStage');
+        const stageClearBonusElement = document.getElementById('stageClearBonus');
+        const nextStageNumberElement = document.getElementById('nextStageNumber');
+        const nextBossNameElement = document.getElementById('nextBossName');
+        const nextStageInfoElement = document.getElementById('nextStageInfo');
+        
+        if (clearedStageElement) clearedStageElement.textContent = this.currentStage.toString();
+        if (stageClearBonusElement) stageClearBonusElement.textContent = stageBonus.toLocaleString();
+        
+        // 次のステージ情報
+        const nextStage = this.currentStage + 1;
+        const nextBossConfig = GAME_CONFIG.stages.bosses.find(boss => boss.stage === nextStage);
+        
+        if (nextStageNumberElement) nextStageNumberElement.textContent = nextStage.toString();
+        if (nextBossNameElement && nextBossConfig) {
+            nextBossNameElement.textContent = nextBossConfig.name;
+        }
+        
+        // 全ステージクリア時の処理
+        const isGameComplete = this.currentStage >= this.totalStages;
+        
+        if (nextStageInfoElement) {
+            if (isGameComplete) {
+                nextStageInfoElement.style.display = 'none';
+            } else {
+                nextStageInfoElement.style.display = 'block';
+            }
+        }
+        
+        // ボタンのテキストを変更
+        if (isGameComplete) {
+            this.nextStageButton.textContent = '🎉 ゲーム終了';
+            // ステージクリア画面のタイトルも変更
+            const titleElement = this.stageClearScreen.querySelector('h1');
+            if (titleElement) {
+                titleElement.textContent = '🎉 全ステージクリア！ 🎉';
+            }
+        } else {
+            this.nextStageButton.textContent = '🚀 次のステージへ';
+            const titleElement = this.stageClearScreen.querySelector('h1');
+            if (titleElement) {
+                titleElement.textContent = '🌟 ステージクリア！ 🌟';
+            }
+        }
+        
+        this.updateUI();
+        
+        console.log(`✨ ステージ${this.currentStage}クリア！`);
+        if (nextBossConfig) {
+            console.log(`🔮 次はステージ${nextStage}: ${nextBossConfig.name} が待ち受けています`);
+            console.log(`📖 ${nextBossConfig.description}`);
+            console.log(`⚔️ 予想HP: ${nextBossConfig.hp} | 攻撃パターン: ${this.translateAttackPattern(nextBossConfig.attackPattern)}`);
+        } else if (isGameComplete) {
+            console.log('🎉 全ステージクリア！おめでとうございます！');
+        }
+    }
+
+    private proceedToNextStage(): void {
+        this.stageClearScreen.classList.add('hidden');
+        
+        // 全ステージクリア時はゲーム終了
+        if (this.currentStage >= this.totalStages) {
+            this.endGame();
+            return;
+        }
+        
+        // 次のステージへ進む
+        this.gameState = 'playing';
+        this.currentStage++;
+        this.enemiesKilled = 0;
+        this.updateStageUI();
     }
 
     /**
@@ -781,9 +860,7 @@ export class Game {
 
     private showGameClear(): void {
         this.score += 5000; // ボーナススコア
-        setTimeout(() => {
-            this.endGame();
-        }, 3000);
+        this.showStageClear(); // ステージクリア画面を表示（全ステージクリア版）
     }
 
     private updateUI(): void {
@@ -851,8 +928,6 @@ export class Game {
         if (stageProgressElement) {
             if (this.bossActive) {
                 stageProgressElement.textContent = 'ボス戦！';
-            } else if (this.stageClearTimer > 0) {
-                stageProgressElement.textContent = 'ステージクリア！';
             } else {
                 const remaining = this.enemiesNeededForBoss - this.enemiesKilled;
                 stageProgressElement.textContent = `ボスまで残り${remaining}体`;
@@ -897,13 +972,7 @@ export class Game {
         this.spawnPowerUps();
         this.updateCombo();
 
-        // ステージクリアタイマー
-        if (this.stageClearTimer > 0) {
-            this.stageClearTimer--;
-            if (this.stageClearTimer === 0) {
-                this.updateStageUI();
-            }
-        }
+
 
         // メガボムエフェクトの更新
         if (this.megaBombEffect.active) {
@@ -996,26 +1065,7 @@ export class Game {
             // メガボムエフェクトの描画
             this.renderMegaBombEffect();
             
-            // ステージクリア演出
-            if (this.stageClearTimer > 0) {
-                this.ctx.save();
-                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                this.ctx.fillRect(0, 0, GAME_CONFIG.canvas.width, GAME_CONFIG.canvas.height);
-                
-                this.ctx.fillStyle = '#FFD700';
-                this.ctx.font = 'bold 48px Arial';
-                this.ctx.textAlign = 'center';
-                this.ctx.fillText(`ステージ ${this.currentStage - 1} クリア！`, GAME_CONFIG.canvas.width / 2, 350);
-                
-                if (this.currentStage <= this.totalStages) {
-                    this.ctx.font = 'bold 32px Arial';
-                    this.ctx.fillText(`ステージ ${this.currentStage} 開始`, GAME_CONFIG.canvas.width / 2, 420);
-                } else {
-                    this.ctx.fillText('全ステージクリア！おめでとう！', GAME_CONFIG.canvas.width / 2, 420);
-                }
-                
-                this.ctx.restore();
-            }
+
         }
     }
 

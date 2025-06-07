@@ -66,6 +66,20 @@
         <div id="activeBuffs">
             <!-- アクティブなバフが表示される -->
         </div>
+        
+        <!-- ステージクリア画面 -->
+        <div id="stageClearScreen" class="screen hidden">
+            <h1>🌟 ステージクリア！ 🌟</h1>
+            <div id="stageClearMessage">
+                <p>ステージ <span id="clearedStage">1</span> をクリアしました！</p>
+                <p>ボーナス： <span id="stageClearBonus">0</span> ポイント</p>
+                <div id="nextStageInfo">
+                    <p>次のステージ: <span id="nextStageNumber">2</span></p>
+                    <p>次のボス: <span id="nextBossName">🛸 エイリアンクルーザー</span></p>
+                </div>
+            </div>
+            <button id="nextStageButton" class="menu-button">🚀 次のステージへ</button>
+        </div>
     </div>
 
     <script type="module" src="dist/main.js"></script>
