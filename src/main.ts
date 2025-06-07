@@ -329,7 +329,16 @@ export class Game {
     private spawnBoss(): void {
         if (!this.bossActive && this.enemiesKilled >= this.enemiesNeededForBoss) {
             this.bossActive = true;
+            
+            // ステージごとの固定ボスを生成
             this.boss = new Boss(1000, 360, this.currentStage);
+            
+            // ボス出現通知をコンソールに表示
+            const bossInfo = this.boss.getBossInfo();
+            console.log(`🚨 BOSS BATTLE! ステージ${this.currentStage}: ${bossInfo.name}`);
+            console.log(`📝 ${bossInfo.description}`);
+            console.log(`💪 HP: ${this.boss.hp}/${this.boss.maxHp}`);
+            
             this.updateStageUI();
             this.showBossUI();
         }
@@ -691,10 +700,33 @@ export class Game {
         if (this.currentStage >= this.totalStages) {
             this.showGameClear();
         } else {
+            // 次のステージのボス予告を表示
+            const nextStage = this.currentStage + 1;
+            const nextBossConfig = GAME_CONFIG.stages.bosses.find(boss => boss.stage === nextStage);
+            
+            if (nextBossConfig) {
+                console.log(`✨ ステージ${this.currentStage}クリア！`);
+                console.log(`🔮 次はステージ${nextStage}: ${nextBossConfig.name} が待ち受けています`);
+                console.log(`📖 ${nextBossConfig.description}`);
+                console.log(`⚔️ 予想HP: ${nextBossConfig.hp} | 攻撃パターン: ${this.translateAttackPattern(nextBossConfig.attackPattern)}`);
+            }
+            
             this.currentStage++;
             this.enemiesKilled = 0;
             this.updateStageUI();
         }
+    }
+
+    /**
+     * 攻撃パターンを日本語に翻訳
+     */
+    private translateAttackPattern(pattern: string): string {
+        const translations: Record<string, string> = {
+            'single': '単発攻撃',
+            'triple': '3方向攻撃',
+            'spread': '5方向拡散攻撃'
+        };
+        return translations[pattern] || pattern;
     }
 
     private showGameClear(): void {
