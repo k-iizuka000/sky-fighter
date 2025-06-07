@@ -238,8 +238,6 @@ export class Boss extends GameObject {
         this.movePatternType = this.config.movePattern;
         
         this.velocity.x = -0.5;
-        
-        console.log(`🎯 ステージ${stage}ボス出現: ${this.name} (HP: ${this.hp})`);
     }
 
     /**
@@ -361,7 +359,6 @@ export class Boss extends GameObject {
         this.hp -= damage;
         if (this.hp <= 0) {
             this.active = false;
-            console.log(`💥 ${this.name} 撃破！`);
             return true; // ボス撃破
         }
         return false;
