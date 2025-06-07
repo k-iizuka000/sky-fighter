@@ -3,7 +3,7 @@ import { Player } from './player.js';
 import { Enemy, Boss } from './enemies.js';
 import { Bullet, BeamBullet, EnemyBullet } from './bullets.js';
 import { PowerUp } from './powerups.js';
-import { GameState, PowerUpType, WeaponType } from './types.js';
+import { GameState, PowerUpType, WeaponType, ComboState } from './types.js';
 import { GAME_CONFIG } from './utils.js';
 
 export class Game {
@@ -29,6 +29,14 @@ export class Game {
     private gameState: GameState = 'title';
     private score: number = 0;
     private lives: number = 3;
+    
+    // コンボシステム
+    private combo: ComboState = {
+        count: 0,
+        lastKillTime: 0,
+        multiplier: 1.0,
+        displayTimer: 0
+    };
     
     // ステージ管理
     private currentStage: number = 1;
@@ -245,6 +253,9 @@ export class Game {
         this.score = 0;
         this.lives = 3;
         
+        // コンボをリセット
+        this.resetCombo();
+        
         // ステージリセット
         this.currentStage = 1;
         this.enemiesKilled = 0;
@@ -362,7 +373,13 @@ export class Game {
                 if (bullet.checkCollision(enemy)) {
                     this.bullets.splice(i, 1);
                     this.enemies.splice(j, 1);
-                    this.score += 100;
+                    
+                    // コンボシステム適用
+                    this.addCombo();
+                    const baseScore = 100;
+                    const earnedScore = this.calculateScore(baseScore);
+                    this.score += earnedScore;
+                    
                     this.enemiesKilled++;
                     this.updateUI();
                     this.updateStageUI();
@@ -378,11 +395,20 @@ export class Game {
                 if (bullet.checkCollision(this.boss)) {
                     this.bullets.splice(i, 1);
                     const defeated = this.boss.takeDamage(10);
-                    this.score += 20;
+                    
+                    // ボスへのダメージでもコンボ適用（小さなスコア）
+                    this.addCombo();
+                    const baseDamageScore = 20;
+                    const earnedScore = this.calculateScore(baseDamageScore);
+                    this.score += earnedScore;
+                    
                     this.updateBossHp();
                     
                     if (defeated) {
-                        this.score += 1000 * this.currentStage;
+                        // ボス撃破ボーナス（コンボ倍率適用）
+                        const baseBossScore = 1000 * this.currentStage;
+                        const bossScore = this.calculateScore(baseBossScore);
+                        this.score += bossScore;
                         this.clearStage();
                     }
                     break;
@@ -429,9 +455,99 @@ export class Game {
 
     private takeDamage(): void {
         this.lives--;
+        
+        // 被弾時にコンボをリセット
+        if (GAME_CONFIG.combo.breakOnDamage) {
+            this.resetCombo();
+        }
+        
         this.updateUI();
         if (this.lives <= 0) {
             this.endGame();
+        }
+    }
+    
+    // コンボシステム関連メソッド
+    private addCombo(): void {
+        const currentTime = Date.now();
+        this.combo.count++;
+        this.combo.lastKillTime = currentTime;
+        this.combo.displayTimer = GAME_CONFIG.combo.displayDuration;
+        
+        // コンボ数に応じてスコア倍率を計算（最大値まで）
+        // 5コンボごとに倍率+0.2、最大5倍
+        this.combo.multiplier = Math.min(
+            1.0 + Math.floor((this.combo.count - 1) / 5) * 0.2,
+            GAME_CONFIG.combo.maxMultiplier
+        );
+    }
+    
+    private resetCombo(): void {
+        this.combo.count = 0;
+        this.combo.multiplier = 1.0;
+        this.combo.displayTimer = 0;
+    }
+    
+    private updateCombo(): void {
+        const currentTime = Date.now();
+        
+        // 一定時間経過でコンボリセット
+        if (this.combo.count > 0 && 
+            currentTime - this.combo.lastKillTime > (GAME_CONFIG.combo.timeWindow * 1000 / 60)) {
+            this.resetCombo();
+        }
+        
+        // 表示タイマーを減らす
+        if (this.combo.displayTimer > 0) {
+            this.combo.displayTimer--;
+        }
+    }
+    
+    private calculateScore(baseScore: number): number {
+        return Math.floor(baseScore * this.combo.multiplier);
+    }
+    
+    private renderComboEffect(): void {
+        // コンボが2以上かつ表示タイマーが有効な場合のみ表示
+        if (this.combo.count >= 2 && this.combo.displayTimer > 0) {
+            this.ctx.save();
+            
+            // コンボ数に応じて色を変化
+            let comboColor = '#FFD700'; // 基本は金色
+            if (this.combo.count >= 50) {
+                comboColor = '#FF00FF'; // 50コンボ以上はマゼンタ
+            } else if (this.combo.count >= 30) {
+                comboColor = '#FF4500'; // 30コンボ以上はオレンジレッド
+            } else if (this.combo.count >= 20) {
+                comboColor = '#FF0000'; // 20コンボ以上は赤
+            } else if (this.combo.count >= 10) {
+                comboColor = '#00FF00'; // 10コンボ以上は緑
+            }
+            
+            // アニメーション効果（点滅）
+            const alpha = (Math.sin(Date.now() * 0.01) + 1) / 2 * 0.5 + 0.5;
+            this.ctx.globalAlpha = alpha;
+            
+            // コンボテキストの描画
+            this.ctx.fillStyle = comboColor;
+            this.ctx.strokeStyle = '#000000';
+            this.ctx.lineWidth = 3;
+            this.ctx.font = 'bold 32px Arial';
+            this.ctx.textAlign = 'center';
+            
+            const comboText = `${this.combo.count} COMBO!`;
+            const multiplierText = `×${this.combo.multiplier.toFixed(1)}`;
+            
+            // 影付きテキスト
+            this.ctx.strokeText(comboText, GAME_CONFIG.canvas.width / 2, 100);
+            this.ctx.fillText(comboText, GAME_CONFIG.canvas.width / 2, 100);
+            
+            // 倍率表示
+            this.ctx.font = 'bold 24px Arial';
+            this.ctx.strokeText(multiplierText, GAME_CONFIG.canvas.width / 2, 130);
+            this.ctx.fillText(multiplierText, GAME_CONFIG.canvas.width / 2, 130);
+            
+            this.ctx.restore();
         }
     }
 
@@ -461,6 +577,7 @@ export class Game {
         const scoreElement = document.getElementById('score');
         const livesElement = document.getElementById('lives');
         const weaponElement = document.getElementById('weapon');
+        const comboElement = document.getElementById('combo');
         
         if (scoreElement) scoreElement.textContent = this.score.toLocaleString();
         if (livesElement) livesElement.textContent = this.lives.toString();
@@ -471,6 +588,16 @@ export class Game {
             'triple': 'トリプルショット'
         };
         if (weaponElement) weaponElement.textContent = weaponNames[this.player.weapon];
+        
+        // コンボ表示の更新
+        if (comboElement) {
+            if (this.combo.count > 1) {
+                comboElement.textContent = `${this.combo.count} COMBO! (${this.combo.multiplier.toFixed(1)}x)`;
+                comboElement.classList.remove('hidden');
+            } else {
+                comboElement.classList.add('hidden');
+            }
+        }
         
         this.updateBuffDisplay();
     }
@@ -553,6 +680,7 @@ export class Game {
         this.spawnEnemies();
         this.spawnBoss();
         this.spawnPowerUps();
+        this.updateCombo();
 
         // ステージクリアタイマー
         if (this.stageClearTimer > 0) {
@@ -623,6 +751,9 @@ export class Game {
             if (this.boss && this.boss.active) {
                 this.boss.render(this.ctx);
             }
+            
+            // コンボエフェクトの描画
+            this.renderComboEffect();
             
             // ステージクリア演出
             if (this.stageClearTimer > 0) {

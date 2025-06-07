@@ -28,6 +28,13 @@ export interface PlayerBuffs {
     rapid: BuffState;
 }
 
+export interface ComboState {
+    count: number;
+    lastKillTime: number;
+    multiplier: number;
+    displayTimer: number;
+}
+
 export type WeaponType = 'normal' | 'double' | 'triple';
 export type PowerUpType = 'double' | 'triple' | 'shield' | 'beam' | 'speed' | 'rapid' | 'life' | 'bomb';
 export type GameState = 'title' | 'playing' | 'ranking' | 'gameOver';
@@ -47,5 +54,11 @@ export interface GameConfig {
     };
     ranking: {
         maxEntries: number;
+    };
+    combo: {
+        timeWindow: number;
+        maxMultiplier: number;
+        displayDuration: number;
+        breakOnDamage: boolean;
     };
 } 

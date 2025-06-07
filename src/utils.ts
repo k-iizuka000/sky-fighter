@@ -57,5 +57,11 @@ export const GAME_CONFIG = {
     },
     ranking: {
         maxEntries: 10
+    },
+    combo: {
+        timeWindow: 180,        // 3秒（60fps基準）でコンボが途切れる
+        maxMultiplier: 5.0,     // 最大5倍のスコア倍率
+        displayDuration: 120,   // 2秒間コンボ表示
+        breakOnDamage: true     // 被弾時にコンボリセット
     }
 } as const; 
