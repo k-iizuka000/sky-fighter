@@ -61,4 +61,31 @@ export interface GameConfig {
         displayDuration: number;
         breakOnDamage: boolean;
     };
+}
+
+// パーティクルシステム関連の型定義
+export interface Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    maxLife: number;
+    size: number;
+    color: string;
+    type: ParticleType;
+    gravity?: number;
+    fade?: boolean;
+}
+
+export type ParticleType = 'explosion' | 'spark' | 'trail' | 'fire' | 'smoke' | 'star' | 'fragment';
+
+export interface ParticleConfig {
+    count: number;
+    speed: { min: number; max: number };
+    size: { min: number; max: number };
+    life: { min: number; max: number };
+    colors: string[];
+    gravity?: number;
+    fade?: boolean;
 } 

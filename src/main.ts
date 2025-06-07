@@ -3,6 +3,7 @@ import { Player } from './player.js';
 import { Enemy, Boss } from './enemies.js';
 import { Bullet, BeamBullet, EnemyBullet } from './bullets.js';
 import { PowerUp } from './powerups.js';
+import { ParticleSystem } from './particles.js';
 import { GameState, PowerUpType, WeaponType, ComboState } from './types.js';
 import { GAME_CONFIG } from './utils.js';
 
@@ -54,6 +55,7 @@ export class Game {
     private bullets: (Bullet | BeamBullet)[] = [];
     private enemyBullets: EnemyBullet[] = [];
     private powerUps: PowerUp[] = [];
+    private particleSystem: ParticleSystem;
     
     // タイマー
     private enemySpawnTimer: number = 0;
@@ -76,6 +78,7 @@ export class Game {
         this.ctx = ctx;
 
         this.rankingManager = new RankingManager();
+        this.particleSystem = new ParticleSystem();
         
         // DOM要素の取得
         this.titleScreen = this.getElement('titleScreen');
@@ -274,6 +277,10 @@ export class Game {
         this.enemySpawnTimer = 0;
         this.powerUpSpawnTimer = 0;
         this.megaBombEffect = { active: false, timer: 0 };
+        
+        // パーティクルをクリア
+        this.particleSystem.clear();
+        
         this.updateUI();
         this.updateStageUI();
     }
@@ -386,6 +393,11 @@ export class Game {
         // 全ての敵を破壊してスコア獲得
         const totalEnemies = this.enemies.length;
         if (totalEnemies > 0) {
+            // 各敵に爆発エフェクト
+            this.enemies.forEach(enemy => {
+                this.particleSystem.createExplosion(enemy.x, enemy.y, 1.5);
+            });
+            
             // コンボを大幅に増加
             for (let i = 0; i < totalEnemies; i++) {
                 this.addCombo();
@@ -400,6 +412,10 @@ export class Game {
         
         // ボスがいる場合は大ダメージ
         if (this.boss && this.boss.active) {
+            // ボスにヒットエフェクト
+            this.particleSystem.createHitEffect(this.boss.x, this.boss.y);
+            this.particleSystem.createEffect(this.boss.x, this.boss.y, 'fire', 2.0);
+            
             const defeated = this.boss.takeDamage(100); // 大ダメージ
             
             // ボスへの大ダメージもコンボ適用
@@ -414,6 +430,9 @@ export class Game {
             this.updateBossHp();
             
             if (defeated) {
+                // ボス爆発エフェクト
+                this.particleSystem.createBossExplosion(this.boss.x, this.boss.y);
+                
                 const baseBossScore = 1000 * this.currentStage;
                 const bossScore = this.calculateScore(baseBossScore);
                 this.score += bossScore;
@@ -434,6 +453,9 @@ export class Game {
             for (let j = this.enemies.length - 1; j >= 0; j--) {
                 const enemy = this.enemies[j];
                 if (bullet.checkCollision(enemy)) {
+                    // パーティクルエフェクト（敵爆発）
+                    this.particleSystem.createExplosion(enemy.x, enemy.y);
+                    
                     this.bullets.splice(i, 1);
                     this.enemies.splice(j, 1);
                     
@@ -456,6 +478,9 @@ export class Game {
             for (let i = this.bullets.length - 1; i >= 0; i--) {
                 const bullet = this.bullets[i];
                 if (bullet.checkCollision(this.boss)) {
+                    // パーティクルエフェクト（ボスヒット）
+                    this.particleSystem.createHitEffect(bullet.x, bullet.y);
+                    
                     this.bullets.splice(i, 1);
                     const defeated = this.boss.takeDamage(10);
                     
@@ -468,6 +493,9 @@ export class Game {
                     this.updateBossHp();
                     
                     if (defeated) {
+                        // パーティクルエフェクト（ボス爆発）
+                        this.particleSystem.createBossExplosion(this.boss.x, this.boss.y);
+                        
                         // ボス撃破ボーナス（コンボ倍率適用）
                         const baseBossScore = 1000 * this.currentStage;
                         const bossScore = this.calculateScore(baseBossScore);
@@ -508,6 +536,9 @@ export class Game {
         for (let i = this.powerUps.length - 1; i >= 0; i--) {
             const powerUp = this.powerUps[i];
             if (this.player.checkCollision(powerUp)) {
+                // パーティクルエフェクト（パワーアップ取得）
+                this.particleSystem.createPowerUpEffect(powerUp.x, powerUp.y);
+                
                 this.powerUps.splice(i, 1);
                 this.activatePowerUp(powerUp.type);
                 this.updateUI();
@@ -841,6 +872,8 @@ export class Game {
         
         this.bullets = this.bullets.filter(bullet => {
             bullet.update();
+            // 弾丸のトレイルエフェクト
+            this.particleSystem.createBulletTrail(bullet.x, bullet.y);
             return bullet.active;
         });
         
@@ -860,6 +893,9 @@ export class Game {
             this.enemyBullets.push(...newBullets);
             this.boss.update();
         }
+
+        // パーティクルシステムの更新
+        this.particleSystem.update();
 
         this.checkCollisions();
     }
@@ -892,6 +928,9 @@ export class Game {
             if (this.boss && this.boss.active) {
                 this.boss.render(this.ctx);
             }
+            
+            // パーティクルエフェクトの描画
+            this.particleSystem.render(this.ctx);
             
             // コンボエフェクトの描画
             this.renderComboEffect();
