@@ -29,6 +29,7 @@ export class Game {
     private gameState: GameState = 'title';
     private score: number = 0;
     private lives: number = 3;
+    private megaBombs: number = 0;
     
     // コンボシステム
     private combo: ComboState = {
@@ -57,6 +58,7 @@ export class Game {
     // タイマー
     private enemySpawnTimer: number = 0;
     private powerUpSpawnTimer: number = 0;
+    private megaBombEffect: { active: boolean; timer: number } = { active: false, timer: 0 };
     
     // 入力管理
     private keys: Record<string, boolean> = {};
@@ -252,6 +254,7 @@ export class Game {
         this.gameOverScreen.classList.add('hidden');
         this.score = 0;
         this.lives = 3;
+        this.megaBombs = 0;
         
         // コンボをリセット
         this.resetCombo();
@@ -270,6 +273,7 @@ export class Game {
         this.powerUps = [];
         this.enemySpawnTimer = 0;
         this.powerUpSpawnTimer = 0;
+        this.megaBombEffect = { active: false, timer: 0 };
         this.updateUI();
         this.updateStageUI();
     }
@@ -303,6 +307,11 @@ export class Game {
             const newBullets = player.fire();
             this.bullets.push(...newBullets);
         }
+        
+        if (this.keys['KeyX']) {
+            this.activateMegaBomb();
+            this.keys['KeyX'] = false; // 連続発動を防ぐ
+        }
     }
 
     private spawnEnemies(): void {
@@ -329,7 +338,7 @@ export class Game {
     private spawnPowerUps(): void {
         this.powerUpSpawnTimer++;
         if (this.powerUpSpawnTimer > 400) {
-            const types: PowerUpType[] = ['double', 'triple', 'shield', 'beam', 'speed', 'rapid', 'life', 'bomb'];
+            const types: PowerUpType[] = ['double', 'triple', 'shield', 'beam', 'speed', 'rapid', 'life', 'bomb', 'megabomb'];
             const type = types[Math.floor(Math.random() * types.length)];
             this.powerUps.push(new PowerUp(GAME_CONFIG.canvas.width, Math.random() * (GAME_CONFIG.canvas.height - 35), type));
             this.powerUpSpawnTimer = 0;
@@ -361,7 +370,61 @@ export class Game {
                 this.score += this.enemies.length * 50;
                 this.enemies = [];
                 break;
+            case 'megabomb':
+                this.megaBombs++;
+                break;
         }
+    }
+
+    private activateMegaBomb(): void {
+        if (this.megaBombs <= 0 || this.megaBombEffect.active) return;
+        
+        this.megaBombs--;
+        this.megaBombEffect.active = true;
+        this.megaBombEffect.timer = 180; // 3秒間のエフェクト (60fps基準)
+        
+        // 全ての敵を破壊してスコア獲得
+        const totalEnemies = this.enemies.length;
+        if (totalEnemies > 0) {
+            // コンボを大幅に増加
+            for (let i = 0; i < totalEnemies; i++) {
+                this.addCombo();
+            }
+            
+            const baseScore = totalEnemies * 200; // 通常ボムより高スコア
+            const earnedScore = this.calculateScore(baseScore);
+            this.score += earnedScore;
+            
+            this.enemies = [];
+        }
+        
+        // ボスがいる場合は大ダメージ
+        if (this.boss && this.boss.active) {
+            const defeated = this.boss.takeDamage(100); // 大ダメージ
+            
+            // ボスへの大ダメージもコンボ適用
+            for (let i = 0; i < 10; i++) {
+                this.addCombo();
+            }
+            
+            const baseDamageScore = 500;
+            const earnedScore = this.calculateScore(baseDamageScore);
+            this.score += earnedScore;
+            
+            this.updateBossHp();
+            
+            if (defeated) {
+                const baseBossScore = 1000 * this.currentStage;
+                const bossScore = this.calculateScore(baseBossScore);
+                this.score += bossScore;
+                this.clearStage();
+            }
+        }
+        
+        // 敵弾も全て消去
+        this.enemyBullets = [];
+        
+        this.updateUI();
     }
 
     private checkCollisions(): void {
@@ -551,6 +614,74 @@ export class Game {
         }
     }
 
+    private renderMegaBombEffect(): void {
+        if (!this.megaBombEffect.active) return;
+        
+        this.ctx.save();
+        
+        // エフェクトの進行度（1.0から0.0へ）
+        const progress = this.megaBombEffect.timer / 180;
+        
+        // 画面全体を白く光らせる
+        const flashAlpha = Math.max(0, progress - 0.7) / 0.3; // 最初の30%で急激に光る
+        if (flashAlpha > 0) {
+            this.ctx.globalAlpha = flashAlpha * 0.8;
+            this.ctx.fillStyle = '#FFFFFF';
+            this.ctx.fillRect(0, 0, GAME_CONFIG.canvas.width, GAME_CONFIG.canvas.height);
+        }
+        
+        // 衝撃波エフェクト
+        const time = (1 - progress) * 500; // 時間経過
+        const centerX = GAME_CONFIG.canvas.width / 2;
+        const centerY = GAME_CONFIG.canvas.height / 2;
+        
+        // 複数の同心円で衝撃波を表現
+        for (let i = 0; i < 3; i++) {
+            const radius = time + i * 100;
+            if (radius > 0 && radius < 1000) {
+                this.ctx.globalAlpha = (1 - radius / 1000) * 0.3;
+                this.ctx.strokeStyle = '#FF0000';
+                this.ctx.lineWidth = 5;
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                this.ctx.stroke();
+            }
+        }
+        
+        // パーティクルエフェクト
+        const particleCount = 50;
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const distance = time * 2;
+            const x = centerX + Math.cos(angle) * distance;
+            const y = centerY + Math.sin(angle) * distance;
+            
+            if (x >= 0 && x <= GAME_CONFIG.canvas.width && y >= 0 && y <= GAME_CONFIG.canvas.height) {
+                this.ctx.globalAlpha = Math.max(0, 1 - distance / 500);
+                this.ctx.fillStyle = '#FFFF00';
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 3, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
+        
+        // メガボムテキスト
+        if (progress > 0.5) {
+            this.ctx.globalAlpha = (progress - 0.5) / 0.5;
+            this.ctx.fillStyle = '#FF0000';
+            this.ctx.strokeStyle = '#FFFFFF';
+            this.ctx.lineWidth = 3;
+            this.ctx.font = 'bold 64px Arial';
+            this.ctx.textAlign = 'center';
+            
+            const text = 'MEGA BOMB!';
+            this.ctx.strokeText(text, centerX, centerY - 50);
+            this.ctx.fillText(text, centerX, centerY - 50);
+        }
+        
+        this.ctx.restore();
+    }
+
     private clearStage(): void {
         this.bossActive = false;
         this.boss = null;
@@ -577,10 +708,12 @@ export class Game {
         const scoreElement = document.getElementById('score');
         const livesElement = document.getElementById('lives');
         const weaponElement = document.getElementById('weapon');
+        const megaBombsElement = document.getElementById('megaBombs');
         const comboElement = document.getElementById('combo');
         
         if (scoreElement) scoreElement.textContent = this.score.toLocaleString();
         if (livesElement) livesElement.textContent = this.lives.toString();
+        if (megaBombsElement) megaBombsElement.textContent = this.megaBombs.toString();
         
         const weaponNames: Record<WeaponType, string> = {
             'normal': '通常弾',
@@ -690,6 +823,14 @@ export class Game {
             }
         }
 
+        // メガボムエフェクトの更新
+        if (this.megaBombEffect.active) {
+            this.megaBombEffect.timer--;
+            if (this.megaBombEffect.timer <= 0) {
+                this.megaBombEffect.active = false;
+            }
+        }
+
         // オブジェクトの更新
         this.player.update();
         
@@ -754,6 +895,9 @@ export class Game {
             
             // コンボエフェクトの描画
             this.renderComboEffect();
+            
+            // メガボムエフェクトの描画
+            this.renderMegaBombEffect();
             
             // ステージクリア演出
             if (this.stageClearTimer > 0) {

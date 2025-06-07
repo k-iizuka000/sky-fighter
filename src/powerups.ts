@@ -10,7 +10,8 @@ export class PowerUp extends GameObject {
         'speed': '#FFFF00',
         'rapid': '#FF8C00',
         'life': '#FF69B4',
-        'bomb': '#8B0000'
+        'bomb': '#8B0000',
+        'megabomb': '#FF0000'
     };
     private readonly icons: Record<PowerUpType, string> = {
         'double': '2',
@@ -20,7 +21,8 @@ export class PowerUp extends GameObject {
         'speed': '🚀',
         'rapid': '🔥',
         'life': '💖',
-        'bomb': '💣'
+        'bomb': '💣',
+        'megabomb': '🌟'
     };
 
     constructor(x: number, y: number, public readonly type: PowerUpType) {
