@@ -328,7 +328,12 @@ export class Game {
         const spawnRate = Math.max(40, 80 - (this.currentStage * 10));
         
         if (this.enemySpawnTimer > spawnRate) {
-            this.enemies.push(new Enemy(GAME_CONFIG.canvas.width, Math.random() * (GAME_CONFIG.canvas.height - 30)));
+            // ステージに応じた敵を生成
+            this.enemies.push(new Enemy(
+                GAME_CONFIG.canvas.width, 
+                Math.random() * (GAME_CONFIG.canvas.height - 100) + 50,
+                this.currentStage
+            ));
             this.enemySpawnTimer = 0;
         }
     }
@@ -383,7 +388,13 @@ export class Game {
                 this.lives++;
                 break;
             case 'bomb':
-                this.score += this.enemies.length * 50;
+                // 敵のタイプに応じたスコア計算
+                let bombScore = 0;
+                this.enemies.forEach(enemy => {
+                    this.particleSystem.createExplosion(enemy.x, enemy.y);
+                    bombScore += enemy.score;
+                });
+                this.score += bombScore;
                 this.enemies = [];
                 break;
             case 'megabomb':
@@ -402,20 +413,20 @@ export class Game {
         // 全ての敵を破壊してスコア獲得
         const totalEnemies = this.enemies.length;
         if (totalEnemies > 0) {
-            // 各敵に爆発エフェクト
+            let totalScore = 0;
+            
+            // 各敵に爆発エフェクトとスコア計算
             this.enemies.forEach(enemy => {
                 this.particleSystem.createExplosion(enemy.x, enemy.y, 1.5);
+                
+                // 敵のタイプに応じたスコア（メガボム倍率適用）
+                this.addCombo();
+                const baseScore = enemy.score * 2; // メガボムは2倍スコア
+                const earnedScore = this.calculateScore(baseScore);
+                totalScore += earnedScore;
             });
             
-            // コンボを大幅に増加
-            for (let i = 0; i < totalEnemies; i++) {
-                this.addCombo();
-            }
-            
-            const baseScore = totalEnemies * 200; // 通常ボムより高スコア
-            const earnedScore = this.calculateScore(baseScore);
-            this.score += earnedScore;
-            
+            this.score += totalScore;
             this.enemies = [];
         }
         
@@ -462,21 +473,29 @@ export class Game {
             for (let j = this.enemies.length - 1; j >= 0; j--) {
                 const enemy = this.enemies[j];
                 if (bullet.checkCollision(enemy)) {
-                    // パーティクルエフェクト（敵爆発）
-                    this.particleSystem.createExplosion(enemy.x, enemy.y);
-                    
                     this.bullets.splice(i, 1);
-                    this.enemies.splice(j, 1);
                     
-                    // コンボシステム適用
-                    this.addCombo();
-                    const baseScore = 100;
-                    const earnedScore = this.calculateScore(baseScore);
-                    this.score += earnedScore;
+                    // 敵にダメージを与える
+                    const defeated = enemy.takeDamage(1);
                     
-                    this.enemiesKilled++;
-                    this.updateUI();
-                    this.updateStageUI();
+                    if (defeated) {
+                        // パーティクルエフェクト（敵爆発）
+                        this.particleSystem.createExplosion(enemy.x, enemy.y);
+                        
+                        // 敵のタイプに応じたスコア
+                        this.addCombo();
+                        const baseScore = enemy.score;
+                        const earnedScore = this.calculateScore(baseScore);
+                        this.score += earnedScore;
+                        
+                        this.enemies.splice(j, 1);
+                        this.enemiesKilled++;
+                        this.updateUI();
+                        this.updateStageUI();
+                    } else {
+                        // ダメージヒットエフェクト
+                        this.particleSystem.createHitEffect(bullet.x, bullet.y);
+                    }
                     break;
                 }
             }
@@ -899,6 +918,13 @@ export class Game {
         
         this.enemies = this.enemies.filter(enemy => {
             enemy.update();
+            
+            // 敵の反撃処理
+            const returnFire = enemy.createReturnFire();
+            if (returnFire) {
+                this.enemyBullets.push(returnFire);
+            }
+            
             return enemy.active;
         });
         

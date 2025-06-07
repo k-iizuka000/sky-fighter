@@ -105,4 +105,25 @@ export interface ParticleConfig {
     colors: string[];
     gravity?: number;
     fade?: boolean;
+}
+
+// 雑魚敵関連の型定義
+export type EnemyType = 'basic' | 'fighter' | 'scout' | 'bomber';
+export type EnemyMovePattern = 'straight' | 'wave' | 'zigzag' | 'rush';
+
+export interface EnemyConfig {
+    type: EnemyType;
+    name: string;
+    emoji: string;
+    hp: number;
+    speed: { min: number; max: number };
+    size: { width: number; height: number };
+    color: string;
+    score: number;
+    movePattern: EnemyMovePattern;
+    special?: {
+        shootsBack?: boolean;
+        fastMove?: boolean;
+        toughArmor?: boolean;
+    };
 } 

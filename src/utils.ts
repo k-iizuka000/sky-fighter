@@ -98,5 +98,46 @@ export const GAME_CONFIG = {
         maxMultiplier: 5.0,     // 最大5倍のスコア倍率
         displayDuration: 120,   // 2秒間コンボ表示
         breakOnDamage: true     // 被弾時にコンボリセット
+    },
+    enemies: {
+        stage1: {
+            type: 'basic',
+            name: '🛩️ 偵察機',
+            emoji: '🛩️',
+            hp: 1,
+            speed: { min: 1, max: 2 },
+            size: { width: 40, height: 30 },
+            color: '#E74C3C',
+            score: 100,
+            movePattern: 'straight'
+        },
+        stage2: {
+            type: 'fighter',
+            name: '🚁 戦闘ヘリ',
+            emoji: '🚁',
+            hp: 2,
+            speed: { min: 0.5, max: 1.5 },
+            size: { width: 45, height: 35 },
+            color: '#FF6B35',
+            score: 150,
+            movePattern: 'wave',
+            special: {
+                shootsBack: true
+            }
+        },
+        stage3: {
+            type: 'bomber',
+            name: '💣 重爆撃機',
+            emoji: '💣',
+            hp: 3,
+            speed: { min: 0.8, max: 1.2 },
+            size: { width: 60, height: 40 },
+            color: '#8B4513',
+            score: 200,
+            movePattern: 'zigzag',
+            special: {
+                toughArmor: true
+            }
+        }
     }
 } as const; 

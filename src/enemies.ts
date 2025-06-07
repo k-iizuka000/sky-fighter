@@ -1,28 +1,204 @@
 import { GameObject, GAME_CONFIG } from './utils.js';
 import { EnemyBullet } from './bullets.js';
-import { BossConfig, AttackPattern, MovePattern } from './types.js';
+import { BossConfig, AttackPattern, MovePattern, EnemyConfig, EnemyType } from './types.js';
 
 export class Enemy extends GameObject {
-    constructor(x: number, y: number) {
-        super(x, y, 40, 30);
-        this.velocity.x = -1 - Math.random() * 1;
-        this.velocity.y = (Math.random() - 0.5) * 1;
+    public readonly type: EnemyType;
+    public readonly config: EnemyConfig;
+    public hp: number;
+    public readonly maxHp: number;
+    public readonly score: number;
+    private moveTimer: number = 0;
+    private shootTimer: number = 0;
+    private readonly baseSpeed: number;
+    
+    constructor(x: number, y: number, stage: number = 1) {
+        // ステージに基づいて敵の設定を取得
+        const config = Enemy.getEnemyConfigByStage(stage);
+        super(x, y, config.size.width, config.size.height);
+        
+        this.config = config;
+        this.type = config.type;
+        this.maxHp = config.hp;
+        this.hp = this.maxHp;
+        this.score = config.score;
+        
+        // 速度をランダムに設定
+        this.baseSpeed = config.speed.min + Math.random() * (config.speed.max - config.speed.min);
+        this.velocity.x = -this.baseSpeed;
+        
+        // 移動パターンに応じた初期化
+        this.initializeMovement();
+        
+        console.log(`👾 ${config.name} 出現 (Stage ${stage})`);
+    }
+
+    private static getEnemyConfigByStage(stage: number): EnemyConfig {
+        switch (stage) {
+            case 1:
+                return GAME_CONFIG.enemies.stage1;
+            case 2:
+                return GAME_CONFIG.enemies.stage2;
+            case 3:
+                return GAME_CONFIG.enemies.stage3;
+            default:
+                return GAME_CONFIG.enemies.stage1;
+        }
+    }
+
+    private initializeMovement(): void {
+        switch (this.config.movePattern) {
+            case 'straight':
+                this.velocity.y = 0;
+                break;
+            case 'wave':
+                this.velocity.y = (Math.random() - 0.5) * 2;
+                break;
+            case 'zigzag':
+                this.velocity.y = Math.random() > 0.5 ? 1 : -1;
+                break;
+            case 'rush':
+                this.velocity.x = -this.baseSpeed * 1.5; // より速く
+                this.velocity.y = (Math.random() - 0.5) * 0.5;
+                break;
+        }
     }
 
     update(): void {
+        this.moveTimer++;
+        this.shootTimer++;
+        
+        // 移動パターンの更新
+        this.updateMovementPattern();
+        
         super.update();
-        if (this.position.x < -this.width) {
+        
+        // 画面外に出たら非アクティブに
+        if (this.position.x < -this.width || this.position.y < -this.height || this.position.y > GAME_CONFIG.canvas.height) {
             this.active = false;
         }
     }
 
+    private updateMovementPattern(): void {
+        switch (this.config.movePattern) {
+            case 'straight':
+                // まっすぐ移動（変更なし）
+                break;
+                
+            case 'wave':
+                // 波状移動
+                this.velocity.y = Math.sin(this.moveTimer * 0.1) * 1.5;
+                break;
+                
+            case 'zigzag':
+                // ジグザグ移動
+                if (this.moveTimer % 60 === 0) {
+                    this.velocity.y *= -1;
+                }
+                break;
+                
+            case 'rush':
+                // 突進移動（プレイヤーの方向に微調整）
+                if (this.moveTimer % 30 === 0) {
+                    this.velocity.y += (Math.random() - 0.5) * 0.5;
+                    this.velocity.y = Math.max(-2, Math.min(2, this.velocity.y));
+                }
+                break;
+        }
+    }
+
+    takeDamage(damage: number = 1): boolean {
+        // 装甲特性があれば半分のダメージ
+        if (this.config.special?.toughArmor) {
+            damage = Math.max(1, Math.floor(damage / 2));
+        }
+        
+        this.hp -= damage;
+        if (this.hp <= 0) {
+            this.active = false;
+            console.log(`💥 ${this.config.name} 撃破！`);
+            return true; // 撃破
+        }
+        return false;
+    }
+
+    // 反撃能力があるかどうか
+    canShootBack(): boolean {
+        return this.config.special?.shootsBack === true && this.shootTimer > 120; // 2秒間隔
+    }
+
+    createReturnFire(): EnemyBullet | null {
+        if (!this.canShootBack()) return null;
+        
+        this.shootTimer = 0;
+        const bulletX = this.position.x - 10;
+        const bulletY = this.position.y + this.height / 2;
+        
+        return new EnemyBullet(bulletX, bulletY, -3, 0, this.config.color);
+    }
+
     render(ctx: CanvasRenderingContext2D): void {
-        ctx.fillStyle = '#E74C3C';
+        // ダメージエフェクト
+        if (this.hp < this.maxHp) {
+            ctx.save();
+            ctx.globalAlpha = 0.8 + Math.sin(Date.now() * 0.02) * 0.2;
+        }
+        
+        // メインボディ
+        ctx.fillStyle = this.config.color;
         ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
         
-        // 敵の詳細
-        ctx.fillStyle = '#C0392B';
-        ctx.fillRect(this.position.x - 10, this.position.y + 10, 15, 10);
+        // タイプ別の詳細レンダリング
+        this.renderTypeSpecificDetails(ctx);
+        
+        if (this.hp < this.maxHp) {
+            ctx.restore();
+        }
+    }
+
+    private renderTypeSpecificDetails(ctx: CanvasRenderingContext2D): void {
+        switch (this.type) {
+            case 'basic': // 偵察機
+                ctx.fillStyle = '#C0392B';
+                ctx.fillRect(this.position.x - 8, this.position.y + 8, 12, 8);
+                // 翼
+                ctx.fillStyle = '#A93226';
+                ctx.fillRect(this.position.x - 5, this.position.y + this.height - 5, 8, 3);
+                break;
+                
+            case 'fighter': // 戦闘ヘリ
+                ctx.fillStyle = '#D35400';
+                // プロペラ
+                ctx.fillRect(this.position.x + 15, this.position.y - 5, 15, 3);
+                // 武装
+                ctx.fillStyle = '#922B21';
+                ctx.fillRect(this.position.x - 8, this.position.y + 12, 10, 6);
+                // 反撃可能の表示
+                if (this.config.special?.shootsBack) {
+                    ctx.fillStyle = '#FF0000';
+                    ctx.fillRect(this.position.x - 3, this.position.y + 5, 4, 4);
+                }
+                break;
+                
+            case 'bomber': // 重爆撃機
+                ctx.fillStyle = '#5D4037';
+                // 重装甲の表現
+                ctx.fillRect(this.position.x + 5, this.position.y + 5, this.width - 10, this.height - 10);
+                // 爆弾ベイ
+                ctx.fillStyle = '#2E2E2E';
+                ctx.fillRect(this.position.x + 10, this.position.y + 15, 15, 8);
+                // 装甲マーク
+                if (this.config.special?.toughArmor) {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fillRect(this.position.x + 2, this.position.y + 2, 6, 6);
+                }
+                break;
+                
+            case 'scout': // 将来的な拡張用
+                ctx.fillStyle = '#27AE60';
+                ctx.fillRect(this.position.x - 5, this.position.y + 5, 10, 5);
+                break;
+        }
     }
 }
 
