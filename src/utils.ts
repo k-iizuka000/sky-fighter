@@ -53,7 +53,42 @@ export const GAME_CONFIG = {
     },
     stages: {
         total: 3,
-        enemiesNeededForBoss: 15
+        enemiesNeededForBoss: 15,
+        bosses: [
+            {
+                stage: 1,
+                name: "🚁 アーマードヘリ",
+                emoji: "🚁",
+                description: "重装甲のヘリコプター型ボス",
+                hp: 150,
+                color: '#8B4513',
+                fireRate: 60,
+                attackPattern: 'single',
+                movePattern: 'vertical'
+            },
+            {
+                stage: 2,
+                name: "🛸 エイリアンクルーザー",
+                emoji: "🛸",
+                description: "3方向攻撃の円盤型ボス",
+                hp: 200,
+                color: '#800080',
+                fireRate: 40,
+                attackPattern: 'triple',
+                movePattern: 'circle'
+            },
+            {
+                stage: 3,
+                name: "🐲 メカドラゴン",
+                emoji: "🐲",
+                description: "5方向拡散攻撃の龍型ボス",
+                hp: 250,
+                color: '#B22222',
+                fireRate: 30,
+                attackPattern: 'spread',
+                movePattern: 'complex'
+            }
+        ]
     },
     ranking: {
         maxEntries: 10

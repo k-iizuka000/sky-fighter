@@ -35,6 +35,22 @@ export interface ComboState {
     displayTimer: number;
 }
 
+// ボス関連の型定義
+export type AttackPattern = 'single' | 'triple' | 'spread';
+export type MovePattern = 'vertical' | 'circle' | 'complex';
+
+export interface BossConfig {
+    stage: number;
+    name: string;
+    emoji: string;
+    description: string;
+    hp: number;
+    color: string;
+    fireRate: number;
+    attackPattern: AttackPattern;
+    movePattern: MovePattern;
+}
+
 export type WeaponType = 'normal' | 'double' | 'triple';
 export type PowerUpType = 'double' | 'triple' | 'shield' | 'beam' | 'speed' | 'rapid' | 'life' | 'bomb' | 'megabomb';
 export type GameState = 'title' | 'playing' | 'ranking' | 'gameOver';
@@ -51,6 +67,7 @@ export interface GameConfig {
     stages: {
         total: number;
         enemiesNeededForBoss: number;
+        bosses: BossConfig[];
     };
     ranking: {
         maxEntries: number;
