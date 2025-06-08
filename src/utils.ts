@@ -52,7 +52,7 @@ export const GAME_CONFIG = {
         baseFireRate: 10
     },
     mobile: {
-        speedMultiplier: 2.0  // モバイルデバイスでのゲーム速度倍率
+        speedMultiplier: 3.0  // モバイルデバイスでのゲーム速度倍率
     },
     stages: {
         total: 3,
