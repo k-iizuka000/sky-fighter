@@ -98,6 +98,9 @@ export class Game {
 
         // モバイル判定
         this.isMobile = this.detectMobile();
+        console.log('📱 Mobile detection:', this.isMobile);
+        console.log('📱 User agent:', navigator.userAgent);
+        console.log('📱 Max touch points:', navigator.maxTouchPoints);
         this.setupCanvasResize();
 
         this.rankingManager = new RankingManager();
@@ -138,46 +141,39 @@ export class Game {
     }
 
     private setupEventListeners(): void {
-        this.startButton.addEventListener('click', (e) => {
-            e.preventDefault();
+        // メニューボタンにクリック＋タッチイベントを設定
+        this.addButtonEvents(this.startButton, () => {
             this.startGame();
         });
         
-        this.rankingButton.addEventListener('click', (e) => {
-            e.preventDefault();
+        this.addButtonEvents(this.rankingButton, () => {
             this.showRanking();
         });
         
-        this.backToTitleButton.addEventListener('click', (e) => {
-            e.preventDefault();
+        this.addButtonEvents(this.backToTitleButton, () => {
             this.showTitle();
         });
         
-        this.clearRankingButton.addEventListener('click', (e) => {
-            e.preventDefault();
+        this.addButtonEvents(this.clearRankingButton, () => {
             if (confirm('本当にランキングをクリアしますか？')) {
                 this.rankingManager.clearRankings();
                 this.updateRankingDisplay();
             }
         });
         
-        this.saveScoreButton.addEventListener('click', (e) => {
-            e.preventDefault();
+        this.addButtonEvents(this.saveScoreButton, () => {
             this.saveScore();
         });
         
-        this.retryButton.addEventListener('click', (e) => {
-            e.preventDefault();
+        this.addButtonEvents(this.retryButton, () => {
             this.startGame();
         });
         
-        this.backToTitleFromGameOver.addEventListener('click', (e) => {
-            e.preventDefault();
+        this.addButtonEvents(this.backToTitleFromGameOver, () => {
             this.showTitle();
         });
         
-        this.nextStageButton.addEventListener('click', (e) => {
-            e.preventDefault();
+        this.addButtonEvents(this.nextStageButton, () => {
             this.proceedToNextStage();
         });
         
@@ -1096,6 +1092,42 @@ export class Game {
         this.update();
         this.render();
         requestAnimationFrame(() => this.gameLoop());
+    }
+
+    // メニューボタンにクリック＋タッチイベントを追加するヘルパーメソッド
+    private addButtonEvents(button: HTMLElement, callback: () => void): void {
+        // clickイベント
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('🖱️ Button clicked:', button.id || button.textContent);
+            callback();
+        });
+        
+        // タッチイベント（モバイル対応）
+        button.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            console.log('👆 Touch start:', button.id || button.textContent);
+            // ボタンが押されたことを視覚的に示す
+            button.style.transform = 'scale(0.95)';
+            button.style.opacity = '0.8';
+        });
+        
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            console.log('👆 Touch end:', button.id || button.textContent);
+            // ボタンの押下状態を解除
+            button.style.transform = 'scale(1)';
+            button.style.opacity = '1';
+            callback();
+        });
+        
+        button.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            console.log('👆 Touch cancel:', button.id || button.textContent);
+            // ボタンの押下状態を解除
+            button.style.transform = 'scale(1)';
+            button.style.opacity = '1';
+        });
     }
 
     // モバイル対応メソッド

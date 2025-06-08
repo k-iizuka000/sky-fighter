@@ -7,6 +7,12 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    
+    /* タッチ操作の改善 */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
 }
 
 #gameContainer {
@@ -66,6 +72,13 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    
+    /* タッチ操作の改善 */
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px; /* タッチ最小サイズ */
+    min-width: 44px;
 }
 
 .menu-button:hover {
@@ -116,6 +129,11 @@ body {
     border-radius: 10px;
     text-align: center;
     background: rgba(255,255,255,0.9);
+    
+    /* タッチ操作の改善 */
+    touch-action: manipulation;
+    min-height: 44px;
+    user-select: text; /* inputは選択可能にする */
 }
 
 #ui {
