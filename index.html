@@ -2,11 +2,59 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>横スクロール飛行機シューティングゲーム</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        @media screen and (orientation: portrait) {
+            .orientation-message {
+                display: flex !important;
+            }
+            #gameContainer {
+                display: none;
+            }
+        }
+        
+        .orientation-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 9999;
+            font-size: 1.5em;
+        }
+        
+        .rotate-icon {
+            font-size: 4em;
+            margin: 20px;
+            animation: rotate 2s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+    <!-- 画面回転メッセージ -->
+    <div class="orientation-message">
+        <div class="rotate-icon">📱</div>
+        <h2>画面を横向きにしてください</h2>
+        <p>このゲームは横画面でプレイしてください</p>
+    </div>
+
     <div id="gameContainer">
         <canvas id="gameCanvas" width="1200" height="800"></canvas>
         
@@ -79,6 +127,25 @@
                 </div>
             </div>
             <button id="nextStageButton" class="menu-button">🚀 次のステージへ</button>
+        </div>
+        
+        <!-- モバイル用タッチコントローラー -->
+        <div id="mobileControls" class="mobile-only">
+            <!-- 方向パッド -->
+            <div id="dpad" class="control-pad">
+                <div class="dpad-center">
+                    <div id="dpad-up" class="dpad-btn dpad-up">↑</div>
+                    <div id="dpad-left" class="dpad-btn dpad-left">←</div>
+                    <div id="dpad-right" class="dpad-btn dpad-right">→</div>
+                    <div id="dpad-down" class="dpad-btn dpad-down">↓</div>
+                </div>
+            </div>
+            
+            <!-- アクションボタン -->
+            <div id="actionButtons" class="action-buttons">
+                <button id="shootButton" class="action-btn shoot-btn">🔫</button>
+                <button id="bombButton" class="action-btn bomb-btn">💣</button>
+            </div>
         </div>
     </div>
 
