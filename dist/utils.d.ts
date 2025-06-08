@@ -27,6 +27,9 @@ export declare const GAME_CONFIG: {
         readonly baseSpeed: 3;
         readonly baseFireRate: 10;
     };
+    readonly mobile: {
+        readonly speedMultiplier: 2;
+    };
     readonly stages: {
         readonly total: 3;
         readonly enemiesNeededForBoss: 15;

@@ -51,6 +51,9 @@ export const GAME_CONFIG = {
         baseSpeed: 3,
         baseFireRate: 10
     },
+    mobile: {
+        speedMultiplier: 2.0  // モバイルデバイスでのゲーム速度倍率
+    },
     stages: {
         total: 3,
         enemiesNeededForBoss: 15,

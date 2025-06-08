@@ -60,6 +60,9 @@ export class Game {
         console.log('📱 Mobile detection:', this.isMobile);
         console.log('📱 User agent:', navigator.userAgent);
         console.log('📱 Max touch points:', navigator.maxTouchPoints);
+        if (this.isMobile) {
+            console.log('🚀 Mobile speed multiplier:', GAME_CONFIG.mobile.speedMultiplier + 'x');
+        }
         this.setupCanvasResize();
         this.rankingManager = new RankingManager();
         this.particleSystem = new ParticleSystem();
@@ -897,7 +900,24 @@ export class Game {
         }
     }
     gameLoop() {
-        this.update();
+        if (this.isMobile) {
+            // モバイルデバイスの場合、ゲーム速度を倍にするため更新を複数回実行
+            const speedMultiplier = GAME_CONFIG.mobile.speedMultiplier;
+            const updateCount = Math.floor(speedMultiplier);
+            const fractionalPart = speedMultiplier - updateCount;
+            // 整数部分の回数だけ更新
+            for (let i = 0; i < updateCount; i++) {
+                this.update();
+            }
+            // 小数部分の確率で追加更新（例：0.5なら50%の確率）
+            if (Math.random() < fractionalPart) {
+                this.update();
+            }
+        }
+        else {
+            // PCの場合は通常の更新
+            this.update();
+        }
         this.render();
         requestAnimationFrame(() => this.gameLoop());
     }
