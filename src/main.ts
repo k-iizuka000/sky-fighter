@@ -65,6 +65,24 @@ export class Game {
     
     // 入力管理
     private keys: Record<string, boolean> = {};
+    
+    // モバイル対応
+    private isMobile: boolean = false;
+    private touchControls: {
+        up: boolean;
+        down: boolean;
+        left: boolean;
+        right: boolean;
+        shoot: boolean;
+        bomb: boolean;
+    } = {
+        up: false,
+        down: false,
+        left: false,
+        right: false,
+        shoot: false,
+        bomb: false
+    };
 
     constructor() {
         // Canvas初期化
@@ -77,6 +95,10 @@ export class Game {
             throw new Error('Canvas context not available');
         }
         this.ctx = ctx;
+
+        // モバイル判定
+        this.isMobile = this.detectMobile();
+        this.setupCanvasResize();
 
         this.rankingManager = new RankingManager();
         this.particleSystem = new ParticleSystem();
@@ -101,6 +123,9 @@ export class Game {
         this.player = new Player(50, 380);
         
         this.setupEventListeners();
+        if (this.isMobile) {
+            this.setupMobileControls();
+        }
         this.gameLoop();
     }
 
@@ -307,30 +332,39 @@ export class Game {
 
         const player = this.player;
         
-        if (this.keys['KeyW'] || this.keys['ArrowUp']) {
+        // キーボード + モバイル入力の統合
+        const upPressed = this.keys['KeyW'] || this.keys['ArrowUp'] || (this.isMobile && this.touchControls.up);
+        const downPressed = this.keys['KeyS'] || this.keys['ArrowDown'] || (this.isMobile && this.touchControls.down);
+        const leftPressed = this.keys['KeyA'] || this.keys['ArrowLeft'] || (this.isMobile && this.touchControls.left);
+        const rightPressed = this.keys['KeyD'] || this.keys['ArrowRight'] || (this.isMobile && this.touchControls.right);
+        
+        if (upPressed) {
             player.velocity.y = -player.speed;
-        } else if (this.keys['KeyS'] || this.keys['ArrowDown']) {
+        } else if (downPressed) {
             player.velocity.y = player.speed;
         } else {
             player.velocity.y = 0;
         }
         
-        if (this.keys['KeyA'] || this.keys['ArrowLeft']) {
+        if (leftPressed) {
             player.velocity.x = -player.speed;
-        } else if (this.keys['KeyD'] || this.keys['ArrowRight']) {
+        } else if (rightPressed) {
             player.velocity.x = player.speed;
         } else {
             player.velocity.x = 0;
         }
         
-        if (this.keys['Space']) {
+        if (this.keys['Space'] || (this.isMobile && this.touchControls.shoot)) {
             const newBullets = player.fire();
             this.bullets.push(...newBullets);
         }
         
-        if (this.keys['KeyX']) {
+        if (this.keys['KeyX'] || (this.isMobile && this.touchControls.bomb)) {
             this.activateMegaBomb();
             this.keys['KeyX'] = false; // 連続発動を防ぐ
+            if (this.isMobile) {
+                this.touchControls.bomb = false; // 連続発動を防ぐ
+            }
         }
     }
 
@@ -1062,6 +1096,112 @@ export class Game {
         this.update();
         this.render();
         requestAnimationFrame(() => this.gameLoop());
+    }
+
+    // モバイル対応メソッド
+    private detectMobile(): boolean {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (!!navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+    }
+
+    private setupCanvasResize(): void {
+        const resizeCanvas = () => {
+            if (this.isMobile) {
+                const container = document.getElementById('gameContainer');
+                if (container) {
+                    const rect = container.getBoundingClientRect();
+                    this.canvas.style.width = rect.width + 'px';
+                    this.canvas.style.height = rect.height + 'px';
+                }
+            }
+        };
+
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 100);
+        });
+        
+        // 初回実行
+        if (this.isMobile) {
+            setTimeout(resizeCanvas, 100);
+        }
+    }
+
+    private setupMobileControls(): void {
+        // 方向パッド
+        const dpadUp = document.getElementById('dpad-up');
+        const dpadDown = document.getElementById('dpad-down');
+        const dpadLeft = document.getElementById('dpad-left');
+        const dpadRight = document.getElementById('dpad-right');
+        
+        // アクションボタン
+        const shootButton = document.getElementById('shootButton');
+        const bombButton = document.getElementById('bombButton');
+
+        // タッチイベントのヘルパー関数
+        const addTouchEvents = (element: HTMLElement | null, onStart: () => void, onEnd: () => void) => {
+            if (!element) return;
+            
+            element.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                onStart();
+            });
+            
+            element.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                onEnd();
+            });
+            
+            element.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                onEnd();
+            });
+        };
+
+        // 方向パッドのイベント設定
+        addTouchEvents(dpadUp, 
+            () => this.touchControls.up = true, 
+            () => this.touchControls.up = false
+        );
+        
+        addTouchEvents(dpadDown, 
+            () => this.touchControls.down = true, 
+            () => this.touchControls.down = false
+        );
+        
+        addTouchEvents(dpadLeft, 
+            () => this.touchControls.left = true, 
+            () => this.touchControls.left = false
+        );
+        
+        addTouchEvents(dpadRight, 
+            () => this.touchControls.right = true, 
+            () => this.touchControls.right = false
+        );
+
+        // アクションボタンのイベント設定
+        addTouchEvents(shootButton, 
+            () => this.touchControls.shoot = true, 
+            () => this.touchControls.shoot = false
+        );
+        
+        addTouchEvents(bombButton, 
+            () => this.touchControls.bomb = true, 
+            () => this.touchControls.bomb = false
+        );
+
+        // デフォルトのタッチ動作を無効化
+        document.addEventListener('touchstart', (e) => {
+            if (e.target && (e.target as Element).closest('#mobileControls')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (e.target && (e.target as Element).closest('#mobileControls')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     }
 }
 
