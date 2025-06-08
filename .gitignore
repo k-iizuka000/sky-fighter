@@ -8,7 +8,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Production build
-dist/
+# dist/ # GitHub Pagesのためコメントアウト
 
 # Environment variables
 .env
